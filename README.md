@@ -29,10 +29,17 @@ with porting stub interfaces for adaptation to any target environment.
 └────────────────────────────────────────────────────┘
 ```
 
-The WS63 is a multi-core RISC-V SoC. The application CPU (ACORE) communicates
-with the WiFi/BT coprocessor (DCORE) through shared-memory IPC (HCC layer).
-The closed-source `.a` libraries contain the entire WiFi MAC protocol stack
-(HMAC + DMAC) and BLE/SLE host protocol stack.
+The WS63 is a **single-core** RISC-V SoC — one application CPU (verified against
+the fbb_ws63 SDK: "one self-developed RISC-V main CPU"; only an `acore` ROM
+config; no `dcore` anywhere). The closed-source `.a` libraries contain the entire
+WiFi MAC protocol stack (HMAC + DMAC) and the BLE/SLE host stack, all **linked
+into the single application image** and running on that one core.
+
+The HCC layer is HiSilicon's generic host↔device transport abstraction. Two
+physical CPUs exist only in the *external-host* topology (a host MCU driving WS63
+as a module over SDIO/SPI). On a standalone WS63, HMAC (upper/host MAC) and DMAC
+(lower/device MAC) are a *software* split on the one core, and HCC is an on-chip
+software/MAC-hardware message path — not a second RISC-V core.
 
 **Key insight:** All hardware register access (hal_*, fe_hal_*, hh503_*) is
 self-contained within `libwifi_driver_dmac.a`. The ~70 external symbols are
