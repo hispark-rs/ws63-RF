@@ -1,58 +1,63 @@
 # ws63-RF extraction manifest
 
-What this delivery contains vs. what a *complete* WiFi link needs, and how to
-obtain the rest from the HiSilicon `fbb_ws63` C SDK. Verified by `nm` against
-`libwifi_driver_dmac.a` (1080 undefined symbols).
+What this delivery contains and how it was completed from the HiSilicon
+`fbb_ws63` C SDK. Verified by `nm` against `libwifi_driver_dmac.a` (1080
+undefined symbols).
 
-## Currently vendored in `lib/`
-
-- `libwifi_rom_data.a`, `libwifi_driver_dmac.a` (WiFi)
-- `libbt_host.a`, `libbt_app.a`, `libbth_gle.a`, `libbth_sdk.a`, `libbg_common.a` (BT/SLE)
-
-## Now also shipped
-
-- `rom/ws63_acore_rom.lds` — the WS63 app-core **mask-ROM symbol table** (3752
-  symbols). Resolves ~422 of dmac.a's undefined references (`fe_*` RF front-end,
-  `hal_machw_*`, `hal_al_rx_*`, `hal_btcoex_*`, …) to their on-chip ROM
-  addresses. Source: `fbb_ws63 drivers/chips/ws63/rom_config/acore/acore.sym`.
-
-## Omitted by the original extraction (obtain from the C SDK to complete WiFi)
-
-These vendor `.a` libs define ~618 of dmac.a's undefined symbols and are **not**
-in `lib/`. They live in the C SDK at `src/protocol/wifi/ws63-liteos-app/`
-(and `.../ws63-liteos-spi-device/` for btcoex/radar):
+## WiFi `.a` libraries vendored in `lib/`
 
 | Library | Size | Defines |
 |---------|------|---------|
-| `libwifi_driver_hmac.a` | ~32 MB | host MAC + public WiFi API (`wifi_*`) |
-| `libwifi_driver_tcm.a` | ~6 MB | TCM-resident driver code |
-| `libwpa_supplicant.a` | ~13 MB | WPA/auth supplicant |
-| `libwifi_btcoex.a` | ~1.7 MB | WiFi/BT coexistence |
-| `libwifi_alg_*.a` (5) | ~2.5 MB | rate/CCA/EDCA/TxBF/temp-protect algorithms |
+| `libwifi_rom_data.a` | 3 KB | WiFi ROM data segment (config globals) |
+| `libwifi_driver_dmac.a` | 614 KB | WiFi device MAC + HAL + RF front-end control |
+| `libwifi_driver_hmac.a` | 32 MB | host MAC + public WiFi API (`wifi_*`) |
+| `libwifi_driver_tcm.a` | 6 MB | TCM-resident driver code |
+| `libwpa_supplicant.a` | 13 MB | WPA/auth supplicant |
+| `libwifi_alg_*.a` (txbf/cca_opt/edca_opt/temp_protect/anti_interference) | ~2.5 MB | rate/PHY algorithms |
 
-To vendor them (run from the C SDK build that produced the wifi libs):
+The hmac/tcm/wpa/alg_* set was **omitted by the original extraction** and added
+here, copied from the C SDK app build `src/protocol/wifi/ws63-liteos-app/`:
 
 ```sh
 SRC=fbb_ws63/src/protocol/wifi/ws63-liteos-app
-DST=ws63-RF/lib
-cp "$SRC"/libwifi_driver_hmac.a "$SRC"/libwifi_driver_tcm.a \
-   "$SRC"/libwpa_supplicant.a "$SRC"/libwifi_alg_*.a "$DST"/
-cp fbb_ws63/src/protocol/wifi/ws63-liteos-spi-device/libwifi_btcoex.a "$DST"/
+cp "$SRC"/libwifi_driver_{hmac,tcm}.a "$SRC"/libwpa_supplicant.a \
+   "$SRC"/libwifi_alg_*.a ws63-RF/lib/
 ```
 
-## Closure result
+Other build variants ship extra optional libs (`libwifi_btcoex.a`,
+`libwifi_radar_sensor.a`, `libwifi_csa.a`, …) under
+`src/protocol/wifi/ws63-liteos-spi-device/`; the btcoex/radar primitives the app
+build needs are otherwise resolved from the ROM table below.
 
-With `rom/ws63_acore_rom.lds` + the full WiFi `.a` set above, `libwifi_driver_dmac.a`'s
-1080 undefined symbols reduce to **~40**, all of which are the **runtime's**
-responsibility (not vendor code):
+## Mask-ROM symbol table
 
-- ~21 `osal_*`/`oal_*` — the documented `port_*.h` porting contract.
-- `log_event_wifi_print*`, `uapi_nv_read`/`uapi_tsensor_get_current_temp`/
-  `uapi_efuse_read_*`, `get_tcxo_freq` — platform services (`port_log.h`/`port_uapi.h`).
-- `__udivdi3`/`__ashldi3`/… — 64-bit compiler-rt builtins.
-- `__wifi_pkt_ram_begin__`/`__wifi_pkt_ram_end__` — linker symbols.
-- `g_dmac_alg_main`/`g_mac_res_etc` — two ROM-data globals defined by no lib.
+- `rom/ws63_acore_rom.lds` — the WS63 app-core ROM symbol table (3752 symbols).
+  Resolves ~422 of dmac.a's undefined references (`fe_*` RF front-end,
+  `hal_machw_*`, `hal_al_rx_*`, `hal_btcoex_*`, …) to their on-chip ROM
+  addresses. Source: `fbb_ws63 drivers/chips/ws63/rom_config/acore/acore.sym`.
+  Link with `-T rom/ws63_acore_rom.lds`. (Real-silicon addresses — an emulator
+  that does not populate the mask ROM cannot execute them.)
 
-A runtime porting layer (e.g. `ws63-rs`'s `ws63-rf-rs`) implements that ~40-symbol
-set. **No radio reverse-engineering is required** — the RF/PHY/MAC-HW primitives
-are the mask-ROM functions in `rom/ws63_acore_rom.lds`.
+## Closure result (verified by `nm`)
+
+With `rom/ws63_acore_rom.lds` + the vendored WiFi `.a` set, `libwifi_driver_dmac.a`'s
+1080 undefined symbols reduce to exactly **40**, all the **runtime's** job
+(compiler-rt / linker / the porting layer — no vendor code, no radio
+reverse-engineering):
+
+- **23 OSAL/OAL** — `osal_kmalloc`/`kfree`, `osal_irq_*` (lock/restore/enable/
+  disable/free/request/**set_priority**), `osal_kthread_*`, `osal_wait_*`,
+  `osal_udelay`, `osal_flush_cache`, `osal_printk`, **`osal_get_current_pid`**.
+- **10 platform** — `log_event_wifi_print{0,1,2,3,4}`, `uapi_nv_read`,
+  `uapi_tsensor_get_current_temp`, **`uapi_efuse_read_bit`/`_buffer`**,
+  **`get_tcxo_freq`**.
+- **7 compiler-rt** — `__udivdi3`/`__divdi3`/`__ashldi3`/`__ashrdi3`/`__lshrdi3`,
+  `memcpy`, `memset`.
+- **2 linker** — `__wifi_pkt_ram_begin__`/`__wifi_pkt_ram_end__`.
+
+**Bold** symbols are referenced by the blob but are NOT in the documented
+`port_*.h` contract (`print3`, `osal_get_current_pid`, `osal_irq_set_priority`,
+`uapi_efuse_read_*`, `get_tcxo_freq`) — the real porting surface is slightly
+larger than the headers document. `ws63-rs`'s `ws63-rf-rs` implements the OSAL/
+OAL/log/uapi set (compiler-rt is provided by the Rust toolchain); the linker
+symbols and a real `.wifi_pkt_ram` region are the firmware's job.
