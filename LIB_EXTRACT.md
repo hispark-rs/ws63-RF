@@ -12,17 +12,28 @@ undefined symbols).
 | `libwifi_driver_dmac.a` | 614 KB | WiFi device MAC + HAL + RF front-end control |
 | `libwifi_driver_hmac.a` | 32 MB | host MAC + public WiFi API (`wifi_*`) |
 | `libwifi_driver_tcm.a` | 6 MB | TCM-resident driver code |
-| `libwpa_supplicant.a` | 13 MB | WPA/auth supplicant |
 | `libwifi_alg_*.a` (txbf/cca_opt/edca_opt/temp_protect/anti_interference) | ~2.5 MB | rate/PHY algorithms |
 
-The hmac/tcm/wpa/alg_* set was **omitted by the original extraction** and added
+The hmac/tcm/alg_* set was **omitted by the original extraction** and added
 here, copied from the C SDK app build `src/protocol/wifi/ws63-liteos-app/`:
 
 ```sh
 SRC=fbb_ws63/src/protocol/wifi/ws63-liteos-app
-cp "$SRC"/libwifi_driver_{hmac,tcm}.a "$SRC"/libwpa_supplicant.a \
-   "$SRC"/libwifi_alg_*.a ws63-RF/lib/
+cp "$SRC"/libwifi_driver_{hmac,tcm}.a "$SRC"/libwifi_alg_*.a ws63-RF/lib/
 ```
+
+## WPA supplicant — intentionally NOT vendored
+
+`libwpa_supplicant.a` is **open-source hostap** (`Copyright Jouni Malinen`,
+BSD; `open_source/wpa_supplicant/...`), not proprietary, and the WiFi MAC driver
+does **not** depend on it (verified by `nm`: 0 MAC→wpa references). It is the
+auth layer for connecting to *secured* APs, and it drags in lwip (TCP/IP),
+mbedtls (crypto) and libc — ~50 MB and a large C porting surface.
+
+It is therefore left out: the ws63-rs path does **open-network MVP first** (no
+supplicant needed), with WPA later via a Rust supplicant (RustCrypto) or by
+re-adding the open lib (`cp "$SRC"/libwpa_supplicant.a ws63-RF/lib/`). This is
+the same supplicant esp-idf uses (open hostap), just not bundled here.
 
 Other build variants ship extra optional libs (`libwifi_btcoex.a`,
 `libwifi_radar_sensor.a`, `libwifi_csa.a`, …) under
