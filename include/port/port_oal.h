@@ -25,10 +25,11 @@ extern "C" {
 
 /* ---- Linker Symbols (defined in your linker script) ---- */
 
-/** Start of the 48KB WiFi packet buffer RAM region. */
-extern uint8_t __wifi_pkt_ram_begin__;
-/** End of the 48KB WiFi packet buffer RAM region. */
-extern uint8_t __wifi_pkt_ram_end__;
+/* The Wi-Fi packet-RAM region symbols (__wifi_pkt_ram_begin__ /
+ * __wifi_pkt_ram_end__) are declared canonically in port_linker.h, alongside
+ * the rest of the memory-layout symbols. Include it here so users of the OAL
+ * pool API still see them without a duplicate declaration. */
+#include "port_linker.h"
 
 /* ---- Memory Pool Configuration ---- */
 

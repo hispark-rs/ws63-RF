@@ -41,9 +41,22 @@ as a module over SDIO/SPI). On a standalone WS63, HMAC (upper/host MAC) and DMAC
 (lower/device MAC) are a *software* split on the one core, and HCC is an on-chip
 software/MAC-hardware message path — not a second RISC-V core.
 
-**Key insight:** All hardware register access (hal_*, fe_hal_*, hh503_*) is
-self-contained within `libwifi_driver_dmac.a`. The ~70 external symbols are
-all standard OS abstraction, IPC, and buffer management interfaces.
+**Key insight:** *Most* hardware register access (hal_*, hh503_*) is
+self-contained within `libwifi_driver_dmac.a` — of its ~685 `hal_*`/`fe_*`
+references, ~443 resolve internally. The ~70 documented port-contract externs
+(`port_*.h`) are standard OS abstraction, IPC, and buffer-management interfaces.
+
+**But note (verified by `nm`):** a *full* link of `libwifi_driver_dmac.a` also
+needs ~118 RF-front-end / coexistence symbols that are **not** in this archive
+— `fe_*` (RF device driver: `fe_initialize_rf_dev`, `fe_rf_set_rf_channel`, …),
+`hal_btcoex_*`, and a few `hal_al_rx_*` / `hal_machw_*`. These come from the
+vendor RF HAL/ROM, which is **not shipped in this delivery**. Likewise the
+host-MAC + public Wi-Fi API layer (`wifi_init`, `wifi_sta_scan`, …, declared in
+`include/api/wifi/`) lives in `libwifi_driver_hmac.a`, also not included here.
+And two data globals the ROM-data blob points at — `g_dmac_alg_main`,
+`g_mac_res_etc` — are defined by **no** library here and must be provided by the
+runtime. So this delivery is sufficient to *port the contract* (and link the
+config blob), not to build a complete Wi-Fi image on its own.
 
 ## Library Catalog
 
