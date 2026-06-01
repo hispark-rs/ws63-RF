@@ -41,22 +41,30 @@ as a module over SDIO/SPI). On a standalone WS63, HMAC (upper/host MAC) and DMAC
 (lower/device MAC) are a *software* split on the one core, and HCC is an on-chip
 software/MAC-hardware message path — not a second RISC-V core.
 
-**Key insight:** *Most* hardware register access (hal_*, hh503_*) is
-self-contained within `libwifi_driver_dmac.a` — of its ~685 `hal_*`/`fe_*`
-references, ~443 resolve internally. The ~70 documented port-contract externs
-(`port_*.h`) are standard OS abstraction, IPC, and buffer-management interfaces.
+**Key insight (verified by `nm` against the C SDK):** `libwifi_driver_dmac.a`
+has ~1080 undefined symbols, and they are **almost all obtainable** — a full
+link does NOT require reverse-engineering the radio:
 
-**But note (verified by `nm`):** a *full* link of `libwifi_driver_dmac.a` also
-needs ~118 RF-front-end / coexistence symbols that are **not** in this archive
-— `fe_*` (RF device driver: `fe_initialize_rf_dev`, `fe_rf_set_rf_channel`, …),
-`hal_btcoex_*`, and a few `hal_al_rx_*` / `hal_machw_*`. These come from the
-vendor RF HAL/ROM, which is **not shipped in this delivery**. Likewise the
-host-MAC + public Wi-Fi API layer (`wifi_init`, `wifi_sta_scan`, …, declared in
-`include/api/wifi/`) lives in `libwifi_driver_hmac.a`, also not included here.
-And two data globals the ROM-data blob points at — `g_dmac_alg_main`,
-`g_mac_res_etc` — are defined by **no** library here and must be provided by the
-runtime. So this delivery is sufficient to *port the contract* (and link the
-config blob), not to build a complete Wi-Fi image on its own.
+- **~422 are WS63 mask-ROM functions** (`fe_*` RF front-end, `hal_machw_*`,
+  `hal_al_rx_*`, `hal_btcoex_*`, …). They live at fixed addresses in the on-chip
+  ROM; the C SDK resolves them via a ROM **symbol-address table**. That table is
+  now shipped here as [`rom/ws63_acore_rom.lds`](rom/ws63_acore_rom.lds) (3752
+  symbols, e.g. `fe_initialize_rf_dev = 0x12825e;`) — link with
+  `-T rom/ws63_acore_rom.lds`. (These addresses only execute on real silicon.)
+- **~618 are defined by other vendor WiFi `.a` libs** — `libwifi_driver_hmac.a`
+  (host-MAC + public Wi-Fi API), `libwifi_driver_tcm.a`, `libwifi_btcoex.a`, the
+  `libwifi_alg_*.a`, `libwpa_supplicant.a`. These are in the C SDK at
+  `protocol/wifi/ws63-liteos-app/` (see `LIB_EXTRACT.md`).
+- **~40 are the runtime's job**: the documented `port_*.h` porting contract
+  (`osal_*`/`oal_*`/`log_*`/`uapi_*`), the 64-bit compiler-rt builtins
+  (`__udivdi3` …), the `__wifi_pkt_ram_*` linker symbols, and the two ROM-data
+  globals `g_dmac_alg_main`/`g_mac_res_etc` (defined by no lib — the runtime
+  supplies them).
+
+**So with `rom/ws63_acore_rom.lds` + the full WiFi `.a` set + a porting layer,
+the blob's symbol surface closes.** The earlier wording here ("all hal_*
+self-contained in dmac.a") was inaccurate; an earlier extraction also omitted
+the ROM table and several WiFi `.a` libs — see `LIB_EXTRACT.md`.
 
 ## Library Catalog
 
