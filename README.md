@@ -89,13 +89,18 @@ the ROM table and several WiFi `.a` libs — see `LIB_EXTRACT.md`.
 ws63-RF/
 ├── README.md
 ├── lib/                          # Precompiled RISC-V .a files
-│   ├── libwifi_driver_dmac.a
-│   ├── libwifi_rom_data.a
+│   ├── libwifi_driver_dmac.a     # WiFi device MAC + HAL + RF front-end
+│   ├── libwifi_driver_hmac.a     # WiFi host MAC + public wifi_* API
+│   ├── libwifi_driver_tcm.a      # TCM-resident WiFi driver code
+│   ├── libwifi_alg_*.a           # 5 algo libs: anti_interference/cca_opt/edca_opt/temp_protect/txbf
+│   ├── libwifi_rom_data.a        # WiFi ROM data segment
 │   ├── libbt_host.a
 │   ├── libbt_app.a
 │   ├── libbth_gle.a
 │   ├── libbth_sdk.a
 │   └── libbg_common.a
+├── rom/
+│   └── ws63_acore_rom.lds        # mask-ROM symbol table (3752 syms; link -T)
 ├── include/
 │   ├── api/                      # Public API headers
 │   │   ├── wifi/                 # WiFi device/config/event/scan API
@@ -141,6 +146,16 @@ ws63-RF/
 ```
 
 ## Porting Guide
+
+> **Worked reference implementation (Rust).** The upstream monorepo's in-tree crate
+> [`ws63-rf-rs`](https://github.com/sanchuanhehe/ws63-rs/tree/main/ws63-rf-rs) implements
+> this entire contract for a bare-metal `riscv32imfc` target: `port_*.h` → `extern "C"`
+> Rust symbols (OSAL/OAL/log/uapi + cooperative scheduler + FRW worker + HCC FIFO +
+> software timers + netif→smoltcp), with **Wi-Fi-init symbol closure achieved** and the
+> data path self-tested on `ws63-qemu`. Read it as a concrete, validated example of the
+> steps below; the steps themselves stay runtime-neutral (FreeRTOS / Zephyr / Linux /
+> bare-metal). What's left there is hardware-in-the-loop (real ROM addresses + pinning
+> the pbuf layout / TX sink to the live blob).
 
 ### Step 1: Implement the porting stubs
 
@@ -189,10 +204,18 @@ in the same RAM region.
 ```makefile
 # Example Makefile fragment
 
-WIFI_LIBS  = -lwifi_driver_dmac -lwifi_rom_data
+# Full WiFi set — a real link needs host-MAC + TCM + algos, not just dmac
+# (see the "Key insight" section above; the original extraction omitted these).
+WIFI_LIBS  = -lwifi_driver_dmac -lwifi_driver_hmac -lwifi_driver_tcm \
+             -lwifi_alg_anti_interference -lwifi_alg_cca_opt -lwifi_alg_edca_opt \
+             -lwifi_alg_temp_protect -lwifi_alg_txbf -lwifi_rom_data
 BT_LIBS    = -lbt_host -lbt_app -lbth_gle -lbth_sdk -lbg_common
 
 LDFLAGS   += -L$(WS63_RF)/lib $(WIFI_LIBS) $(BT_LIBS)
+
+# Required: the mask-ROM symbol table (fe_*/hal_machw_*/… live at fixed ROM
+# addresses; these only execute on real silicon).
+LDFLAGS   += -T$(WS63_RF)/rom/ws63_acore_rom.lds
 
 # Required: libgcc for __divdi3/__udivdi3
 LDFLAGS   += -lgcc
