@@ -148,7 +148,7 @@ ws63-RF/
 ## Porting Guide
 
 > **Worked reference implementation (Rust).** The upstream monorepo's in-tree crate
-> [`ws63-rf-rs`](https://github.com/sanchuanhehe/ws63-rs/tree/main/ws63-rf-rs) implements
+> [`ws63-rf-rs`](https://github.com/hispark-rs/ws63-rs/tree/main/ws63-rf-rs) implements
 > this entire contract for a bare-metal `riscv32imfc` target: `port_*.h` → `extern "C"`
 > Rust symbols (OSAL/OAL/log/uapi + cooperative scheduler + FRW worker + HCC FIFO +
 > software timers + netif→smoltcp), with **Wi-Fi-init symbol closure achieved** and the
@@ -318,9 +318,9 @@ void init_ble(void) {
 
 ## References
 
-- **Hardware register map:** [ws63-svd](https://github.com/sanchuanhehe/ws63-svd) — CMSIS-SVD
+- **Hardware register map:** [ws63-svd](https://github.com/hispark-rs/ws63-svd) — CMSIS-SVD
   file covering all documented WS63 peripherals
-- **Hardware documentation:** [ws63-guide](https://github.com/sanchuanhehe/ws63-guide) —
+- **Hardware documentation:** [ws63-guide](https://github.com/hispark-rs/ws63-guide) —
   System architecture, memory map, interrupt table, peripheral register descriptions
 - **Original SDK:** fbb_ws63 — HiSilicon WS63 LiteOS SDK (reference implementation of
   porting stubs is in `src/drivers/chips/ws63/porting/`)
