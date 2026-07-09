@@ -12,9 +12,9 @@
 > 链入镜像。**Wi-Fi-init 的符号闭合已达成**（whole-archive 0 重复符号；`--gc-sections` rooted at
 > `uapi_wifi_init` 残留仅 2 个 `__wifi_pkt_ram_*` defsym），数据通路已在 `ws63-qemu` standalone 自测。
 > 剩余是真机 bring-up——掩膜 ROM 函数只在硅片上可执行（地址见 `rom/ws63_acore_rom.lds`）、厂商自定义重定位 +
-> 把 netif pbuf 布局/TX sink pin 到真实 blob。详见下方 `README.md` 的 Porting Guide 与上游 `ROADMAP.md` 阶段 3-5。
+> 把 netif pbuf 布局/TX sink pin 到真实 blob。详见下方 `README.md` 的 Porting Guide 与上游 `ROADMAP.md` C1-C5。
 
 完整架构与评审（集中维护于主仓库）：
 - 组件文档：<https://github.com/hispark-rs/ws63-rs/blob/main/docs/architecture/ws63-RF.md>
 - 总体架构：<https://github.com/hispark-rs/ws63-rs/blob/main/docs/architecture/overview.md>
-- 整改排期（连接性 bring-up）：<https://github.com/hispark-rs/ws63-rs/blob/main/ROADMAP.md>（阶段 3-5）
+- 当前路线（连接性 bring-up）：<https://github.com/hispark-rs/ws63-rs/blob/main/ROADMAP.md>（C1-C5）
