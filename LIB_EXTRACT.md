@@ -12,6 +12,7 @@ undefined symbols).
 | `libwifi_driver_dmac.a` | 614 KB | WiFi device MAC + HAL + RF front-end control |
 | `libwifi_driver_hmac.a` | 32 MB | host MAC + public WiFi API (`wifi_*`) |
 | `libwifi_driver_tcm.a` | 6 MB | TCM-resident driver code |
+| `libwpa_supplicant.a` | 13 MB | Optional hostap station authentication/supplicant layer |
 | `libwifi_alg_*.a` (txbf/cca_opt/edca_opt/temp_protect/anti_interference) | ~2.5 MB | rate/PHY algorithms |
 
 The hmac/tcm/alg_* set was **omitted by the original extraction** and added
@@ -22,18 +23,25 @@ SRC=fbb_ws63/src/protocol/wifi/ws63-liteos-app
 cp "$SRC"/libwifi_driver_{hmac,tcm}.a "$SRC"/libwifi_alg_*.a ws63-RF/lib/
 ```
 
-## WPA supplicant — intentionally NOT vendored
+## WPA supplicant -- optional delivery
 
 `libwpa_supplicant.a` is **open-source hostap** (`Copyright Jouni Malinen`,
 BSD; `open_source/wpa_supplicant/...`), not proprietary, and the WiFi MAC driver
 does **not** depend on it (verified by `nm`: 0 MAC→wpa references). It is the
 auth layer for connecting to *secured* APs, and it drags in lwip (TCP/IP),
-mbedtls (crypto) and libc — ~50 MB and a large C porting surface.
+mbedtls (crypto) and libc when its public entry points are selected.
 
-It is therefore left out: the ws63-rs path does **open-network MVP first** (no
-supplicant needed), with WPA later via a Rust supplicant (RustCrypto) or by
-re-adding the open lib (`cp "$SRC"/libwpa_supplicant.a ws63-RF/lib/`). This is
-the same supplicant esp-idf uses (open hostap), just not bundled here.
+The exact WS63 app archive is included so ports can add WPA2/WPA3 without
+reconstructing the SDK delivery. It remains an **optional archive**: open-network
+bring-up does not link it, and consumers must explicitly provide the WPA task,
+crypto and network-service dependencies before selecting its entry points.
+
+Source and integrity:
+
+```text
+fbb_ws63/src/protocol/wifi/ws63-liteos-app/libwpa_supplicant.a
+sha256 3dd465265fe02bf7fe68f6c953da6456dba427f431fd06ea147a798f32d623f5
+```
 
 Other build variants ship extra optional libs (`libwifi_btcoex.a`,
 `libwifi_radar_sensor.a`, `libwifi_csa.a`, …) under

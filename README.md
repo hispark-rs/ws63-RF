@@ -54,8 +54,9 @@ link does NOT require reverse-engineering the radio:
 - **~618 are defined by other vendor WiFi `.a` libs** — `libwifi_driver_hmac.a`
   (host-MAC + public Wi-Fi API), `libwifi_driver_tcm.a`, the `libwifi_alg_*.a`.
   These were omitted by the original extraction and are **now also vendored in
-  `lib/`** (see `LIB_EXTRACT.md`). The open hostap `libwpa_supplicant.a` (WPA
-  auth) is deliberately **not** bundled — see `LIB_EXTRACT.md`.
+  `lib/`** (see `LIB_EXTRACT.md`). The open hostap `libwpa_supplicant.a` is also
+  delivered for opt-in WPA2/WPA3 work, but is not part of the default blob
+  closure.
 - **~40 are the runtime's job**: the documented `port_*.h` porting contract
   (`osal_*`/`oal_*`/`log_*`/`uapi_*`), the 64-bit compiler-rt builtins
   (`__udivdi3` …), the `__wifi_pkt_ram_*` linker symbols, and the two ROM-data
@@ -74,6 +75,7 @@ the ROM table and several WiFi `.a` libs — see `LIB_EXTRACT.md`.
 | `libwifi_driver_dmac.a` | 614 KB | WiFi device MAC + HAL + RF front-end control |
 | `libwifi_driver_hmac.a` | 32 MB | WiFi host MAC + public Wi-Fi API (`wifi_*`) |
 | `libwifi_driver_tcm.a` | 6 MB | TCM-resident WiFi driver code |
+| `libwpa_supplicant.a` | 13 MB | Optional hostap WPA supplicant/authentication layer |
 | `libwifi_alg_*.a` (5) | ~2.5 MB | rate/CCA/EDCA/TxBF/temp-protect algorithms |
 | `libwifi_rom_data.a` | 3 KB | WiFi ROM data segment |
 | `rom/ws63_acore_rom.lds` | 144 KB | mask-ROM symbol table (3752 symbols; link `-T`) |
