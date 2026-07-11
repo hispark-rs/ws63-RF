@@ -25,21 +25,33 @@ extern "C" {
  * The WiFi driver uses this to read calibrated RF parameters, MAC address,
  * and other persistent configuration stored in flash/eFuse.
  *
- * @param id     NV item identifier (platform-defined).
- * @param buf    Output buffer for the read data.
- * @param len    Length of data to read.
+ * @param key          NV item identifier (platform-defined).
+ * @param max_len      Capacity of the output buffer.
+ * @param actual_len   Actual number of bytes returned.
+ * @param value        Output buffer for the value.
  * @return 0 on success, non-zero on failure.
  */
-int uapi_nv_read(uint32_t id, void *buf, uint32_t len);
+uint32_t uapi_nv_read(uint16_t key, uint16_t max_len, uint16_t *actual_len, uint8_t *value);
+
+/**
+ * Write a value to non-volatile storage.
+ *
+ * @param key    NV item identifier (platform-defined).
+ * @param value  Value to persist.
+ * @param len    Number of bytes in value.
+ * @return 0 on success, non-zero on failure.
+ */
+uint32_t uapi_nv_write(uint16_t key, const uint8_t *value, uint16_t len);
 
 /**
  * Get the current chip temperature.
  * Used by the WiFi thermal protection algorithm (temperature-based TX power
  * backoff) and radar calibration.
  *
- * @return Temperature in Celsius (or temperature sensor code value).
+ * @param temp  Output temperature in degrees Celsius.
+ * @return 0 on success, non-zero on failure.
  */
-int uapi_tsensor_get_current_temp(void);
+uint32_t uapi_tsensor_get_current_temp(int8_t *temp);
 
 /**
  * Get the current system tick in milliseconds.

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+- Correct `frw_rom_cb_register` to the vendor two-argument, void-returning
+  mask-ROM callback registration ABI.
+- Correct `uapi_tsensor_get_current_temp` in the language-neutral port contract
+  to use the vendor SDK's output-pointer plus status-return ABI.
+
 ## [Initial Release] — 2026-06-02
 
 ### Added

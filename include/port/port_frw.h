@@ -90,8 +90,8 @@ int frw_thread_get_wait(void);
 
 /* ---- ROM Callbacks ---- */
 
-/** Register a ROM callback function. */
-int frw_rom_cb_register(void *cb);
+/** Register a callback in the WS63 mask-ROM callback table. */
+void frw_rom_cb_register(uint32_t func_id, void *func_cb);
 
 /* ---- HCC Service Integration ---- */
 

@@ -73,13 +73,12 @@ typedef void* (*osal_kthread_func)(void *arg);
  * Create a kernel-level thread.
  * @param thread_func  Thread entry function.
  * @param arg          Argument passed to thread_func.
- * @param stack_size   Stack size in bytes.
- * @param priority     Thread priority (platform-specific scale).
  * @param name         Thread name (for debug).
+ * @param stack_size   Stack size in bytes.
  * @return Thread handle, or NULL on failure.
  */
 osal_handle osal_kthread_create(osal_kthread_func thread_func, void *arg,
-                                size_t stack_size, int priority, const char *name);
+                                const char *name, size_t stack_size);
 
 /** Destroy/terminate a kernel thread. */
 int osal_kthread_destroy(osal_handle thread);
