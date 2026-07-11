@@ -100,7 +100,8 @@ ws63-RF/
 │   ├── libbth_sdk.a
 │   └── libbg_common.a
 ├── rom/
-│   └── ws63_acore_rom.lds        # mask-ROM symbol table (3752 syms; link -T)
+│   ├── ws63_acore_rom.lds        # mask-ROM symbol table (3752 syms; link -T)
+│   └── ws63_acore_wifi_patches.txt # audited Wi-Fi ROM patch entry list
 ├── include/
 │   ├── api/                      # Public API headers
 │   │   ├── wifi/                 # WiFi device/config/event/scan API

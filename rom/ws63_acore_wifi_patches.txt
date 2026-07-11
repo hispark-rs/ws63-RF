@@ -1,0 +1,46 @@
+# WS63 application-core Wi-Fi mask-ROM patch entries.
+#
+# Source: fbb_ws63 build/config/target_config/ws63/patch_config/
+#         ws63-liteos-app.cfg, "start wifi patch" group.
+#
+# Each name identifies a mask-ROM function. The matching replacement exported
+# by libwifi_driver_dmac.a is `<name>_patch`. Addresses are intentionally not
+# duplicated here: the ROM address comes from ws63_acore_rom.lds and the
+# replacement address comes from the final application ELF.
+dmac_psm_process_tim_elm
+dmac_psm_tx_complete_sta
+dmac_psm_max_powersave_enable
+dmac_scan_channel_statistics_complete_continue
+dmac_get_data_type_from_8023_etc
+dmac_rx_prepare_data
+frw_thread_process_msg
+dmac_mac_error_handle
+dmac_mac_error_process_event
+hh503_dispatch_trig_event_encap
+hh503_rx_alloc_netbuf_and_dscr
+hal_rx_add_dscr
+hal_rx_pre_add_dscr
+hal_get_tx_q_status_empty
+dmac_latency_trace_init_proc
+dmac_latency_stats_init_proc
+hal_gp_get_mpdu_count
+hal_get_tx_dscr_pn_msb
+dmac_tx_complete_ampdu_buffer
+dmac_mgmt_switch_channel
+hal_set_mac_clken
+hh503_clear_rx_pn
+hh503_enable_ce
+dmac_tx_get_txop_alg
+dmac_tx_get_baw_remain_num
+alg_tpc_tx_query_vap_special
+dmac_config_tx_addba_rsp_lut_proc
+alg_ar_get_phy_protocol_by_rate_info
+frw_free_msg_node
+hh503_pow_set_user_resp_frm_phy_tx_mode
+hal_device_handle_idle_vap_down
+hal_recover_machw_phy_and_pa
+hal_add_machw_ba_lut_entry
+hal_remove_machw_ba_lut_entry
+set_phy_channel_freq_factor
+dmac_psm_process_qosnull_no_ack
+dmac_psm_tx_process_data_sta
